@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36109.1 d17.14
+VisualStudioVersion = 17.14.36109.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompiladorCPLUS", "CompiladorCPLUS\CompiladorCPLUS.csproj", "{E7783970-3A4D-4E75-8E3C-B27AB64EE6E3}"
 EndProject
