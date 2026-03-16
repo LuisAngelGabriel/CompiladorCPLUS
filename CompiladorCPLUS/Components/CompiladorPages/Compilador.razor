@@ -1,0 +1,58 @@
+﻿@page "/compilador"
+@rendermode InteractiveServer
+@using CompiladorCPLUS.Models
+@using CompiladorCPLUS.Service
+@inject CompiladorService compiladorService
+@inject LexerService lexerService
+
+<div class="container mt-4">
+    <div class="card bg-dark text-white shadow">
+        <div class="card-header border-secondary">
+            <h4 class="mb-0">Compilador C+ <small class="text-muted">(Validador de Sintaxis)</small></h4>
+        </div>
+        <div class="card-body">
+            <textarea @bind="compilacion.Codigo" class="form-control bg-black text-success font-monospace mb-3"
+                      rows="12" style="border: 1px solid #333;" placeholder="Escribe tu código aquí..."></textarea>
+
+            <button class="btn btn-primary w-100 fw-bold" @onclick="Compilar">EJECUTAR COMPILACIÓN</button>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <h5 class="text-secondary"><i class="bi bi-exclamation-octagon"></i> Lista de Errores:</h5>
+        <div class="list-group shadow-sm">
+            @if (errores.Any())
+            {
+                @foreach (var error in errores)
+                {
+                    <div class="list-group-item list-group-item-danger font-monospace py-2">
+                        <i class="bi bi-x-circle-fill me-2"></i> @error
+                    </div>
+                }
+            }
+            else if (compilacionRealizada)
+            {
+                <div class="list-group-item list-group-item-success font-monospace py-2">
+                    <i class="bi bi-check-circle-fill me-2"></i> Compilación exitosa: 0 errores encontrados.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private Compilacion compilacion = new();
+    private List<string> errores = new();
+    private bool compilacionRealizada = false;
+
+    private void Compilar()
+    {
+        errores = lexerService.ValidarCodigo(compilacion.Codigo);
+        compilacionRealizada = true;
+
+        // Guardamos en la DB para el historial
+        compilacion.TieneErrores = errores.Any();
+       compilacion.ResultadoAnalisis = errores.Any() ? $"{errores.Count} errores" : "Limpio";
+        compiladorService.Guardar(compilacion);
+    }
+}

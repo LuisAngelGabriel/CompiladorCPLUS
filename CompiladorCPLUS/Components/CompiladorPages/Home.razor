@@ -1,7 +1,67 @@
 ﻿@page "/"
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Inicio - Compilador C+</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="container mt-5">
+    <div class="p-5 mb-4 bg-dark text-white rounded-3 shadow">
+        <div class="container-fluid py-5 text-center">
+            <h1 class="display-4 fw-bold text-primary">Compilador Lenguaje C+</h1>
+            <p class="fs-4">Proyecto de Ingeniería de Sistemas para la Universidad Católica Nordestana (UCNE).</p>
+            <hr class="my-4 border-primary">
+            <p>Analiza léxicamente tu código, identifica tokens y gestiona tu historial de compilaciones de manera eficiente.</p>
+            <a href="compilador" class="btn btn-primary btn-lg px-4 shadow-sm">
+                <i class="bi bi-play-fill"></i> Empezar a Compilar
+            </a>
+        </div>
+    </div>
 
-Welcome to your new app.
+    <div class="row g-4 py-5">
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="feature-icon bg-primary bg-gradient text-white fs-2 mb-3 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                        <i class="bi bi-code-square"></i>
+                    </div>
+                    <h3 class="fs-4">Análisis Léxico</h3>
+                    <p>Identificación precisa de palabras reservadas, identificadores, números, operadores y cadenas.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="feature-icon bg-success bg-gradient text-white fs-2 mb-3 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                        <i class="bi bi-database-check"></i>
+                    </div>
+                    <h3 class="fs-4">Persistencia SQLite</h3>
+                    <p>Historial completo de compilaciones guardado localmente mediante Entity Framework Core.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="feature-icon bg-warning bg-gradient text-white fs-2 mb-3 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    </div>
+                    <h3 class="fs-4">Detección de Errores</h3>
+                    <p>Sistema capaz de señalar caracteres inválidos y errores de sintaxis en el código fuente.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="pt-3 mt-4 text-muted border-top text-center">
+        Desarrollado por <strong>Luis Angel Gabriel Morillo & James Enmanuel Ureña Paulino</strong> &copy; 2026 - UCNE
+    </footer>
+</div>
+
+<style>
+    body {
+        background-color: #f8f9fa;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+        transition: transform 0.3s ease;
+    }
+</style>
