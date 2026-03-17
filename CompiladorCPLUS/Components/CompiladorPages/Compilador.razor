@@ -4,55 +4,153 @@
 @using CompiladorCPLUS.Service
 @inject CompiladorService compiladorService
 @inject LexerService lexerService
+@inject ParserService parserService
+@inject SemanticService semanticService
+
+<PageTitle>Editor C+ | UCNE PRO</PageTitle>
 
 <div class="container mt-4">
-    <div class="card bg-dark text-white shadow">
-        <div class="card-header border-secondary">
-            <h4 class="mb-0">Compilador C+ <small class="text-muted">(Validador de Sintaxis)</small></h4>
-        </div>
-        <div class="card-body">
-            <textarea @bind="compilacion.Codigo" class="form-control bg-black text-success font-monospace mb-3"
-                      rows="12" style="border: 1px solid #333;" placeholder="Escribe tu código aquí..."></textarea>
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card bg-dark text-white shadow-lg border-0 mb-4">
+                <div class="card-header border-secondary bg-gradient d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0 text-primary"><i class="bi bi-code-slash"></i> IDE C+ <small class="text-muted" style="font-size: 0.6em;">v2.0</small></h4>
+                    <div class="text-muted small">Luis Morillo & James Ureña</div>
+                </div>
+                
+                <div class="card-body p-0">
+                    <textarea @bind="compilacion.Codigo" 
+                              class="form-control bg-black text-success font-monospace p-4 border-0"
+                              rows="15" 
+                              style="outline: none; resize: none; font-size: 1rem; line-height: 1.5; border-radius: 0;" 
+                              placeholder="// Escribe tu código C+ aquí..."></textarea>
+                </div>
 
-            <button class="btn btn-primary w-100 fw-bold" @onclick="Compilar">EJECUTAR COMPILACIÓN</button>
-        </div>
-    </div>
+                <div class="card-footer border-secondary bg-dark p-3">
+                    <button class="btn btn-primary w-100 fw-bold py-2 shadow" @onclick="Compilar">
+                        <i class="bi bi-play-fill"></i> COMPILAR Y EJECUTAR
+                    </button>
+                </div>
+            </div>
 
-    <div class="mt-4">
-        <h5 class="text-secondary"><i class="bi bi-exclamation-octagon"></i> Lista de Errores:</h5>
-        <div class="list-group shadow-sm">
-            @if (errores.Any())
-            {
-                @foreach (var error in errores)
+            <div class="bg-black text-white p-3 rounded shadow font-monospace" 
+                 style="min-height: 150px; border-left: 5px solid @(errores.Any() ? "#ff4757" : "#2ed573");">
+                <div class="text-secondary border-bottom border-secondary pb-2 mb-2 d-flex justify-content-between small">
+                    <span>TERMINAL DE SALIDA</span>
+                    <span>@DateTime.Now.ToString("HH:mm:ss")</span>
+                </div>
+                @if (errores.Any())
                 {
-                    <div class="list-group-item list-group-item-danger font-monospace py-2">
-                        <i class="bi bi-x-circle-fill me-2"></i> @error
+                    @foreach (var error in errores)
+                    {
+                        <div class="text-danger mt-1 small"><span class="text-white-50">>></span> @error</div>
+                    }
+                }
+                else if (compilacionRealizada)
+                {
+                    <div class="text-success mt-2">
+                        <i class="bi bi-check-circle"></i> [SUCCESS] Compilación finalizada sin errores.
                     </div>
                 }
-            }
-            else if (compilacionRealizada)
-            {
-                <div class="list-group-item list-group-item-success font-monospace py-2">
-                    <i class="bi bi-check-circle-fill me-2"></i> Compilación exitosa: 0 errores encontrados.
+                else
+                {
+                    <div class="text-muted mt-2 small">Esperando entrada de código...</div>
+                }
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-info bg-dark text-white shadow h-100">
+                <div class="card-header bg-info text-dark fw-bold py-3">
+                    <i class="bi bi-cpu"></i> TABLA DE SÍMBOLOS
                 </div>
-            }
+                <div class="card-body p-0" style="max-height: 600px; overflow-y: auto;">
+                    <table class="table table-dark table-hover mb-0 text-center small">
+                        <thead class="table-secondary text-dark">
+                            <tr>
+                                <th>Dirección</th>
+                                <th>Var</th>
+                                <th>Tipo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (VariablesEnMemoria.Any())
+                            {
+                                @foreach (var var in VariablesEnMemoria)
+                                {
+                                    <tr>
+                                        <td class="text-info font-monospace">0x@var.Key.GetHashCode().ToString("X4")</td>
+                                        <td class="fw-bold">@var.Key</td>
+                                        <td><span class="badge bg-primary">@var.Value</span></td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="3" class="py-4 text-muted">No hay variables declaradas</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer bg-dark border-info text-center">
+                    <small class="text-info">Análisis Semántico Activo</small>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
+<style>
+    body { background-color: #121212; }
+    textarea::-webkit-scrollbar { width: 8px; }
+    textarea::-webkit-scrollbar-thumb { background: #222; border-radius: 4px; }
+    .table-hover tbody tr:hover { background-color: #1a1a1a !important; }
+</style>
+
 @code {
     private Compilacion compilacion = new();
     private List<string> errores = new();
+    private Dictionary<string, string> VariablesEnMemoria = new();
     private bool compilacionRealizada = false;
 
-    private void Compilar()
+    private async Task Compilar()
     {
-        errores = lexerService.ValidarCodigo(compilacion.Codigo);
+        compilacionRealizada = false;
+        errores.Clear();
+        VariablesEnMemoria.Clear();
+
+        if (string.IsNullOrWhiteSpace(compilacion.Codigo))
+        {
+            errores.Add("Error: El editor está vacío.");
+            return;
+        }
+
+        // 1. Análisis Léxico
+        var eLexicos = lexerService.ValidarCodigo(compilacion.Codigo);
+        
+        // 2. Análisis Sintáctico
+        var eSintacticos = parserService.AnalizarSintaxis(compilacion.Codigo);
+
+        // 3. Análisis Semántico y Obtención de Tabla de Símbolos
+        // Nota: Asegúrate de que tu SemanticService tenga un método para obtener la tabla actual
+        errores = eLexicos.Concat(eSintacticos).Concat(semanticService.AnalizarSemantica(compilacion.Codigo)).ToList();
+        
+        // Extraemos la tabla de símbolos para la vista (esto asume que SemanticService guarda el estado o lo devuelve)
+        VariablesEnMemoria = semanticService.ObtenerTablaSimbolos(compilacion.Codigo);
+
         compilacionRealizada = true;
 
-        // Guardamos en la DB para el historial
+        // Persistencia
         compilacion.TieneErrores = errores.Any();
-       compilacion.ResultadoAnalisis = errores.Any() ? $"{errores.Count} errores" : "Limpio";
-        compiladorService.Guardar(compilacion);
+        compilacion.Fecha = DateTime.Now;
+        compilacion.ResultadoAnalisis = errores.Any() ? $"{errores.Count} errores" : "Limpio";
+        
+        await compiladorService.Guardar(compilacion);
+
+        // Reset del objeto pero manteniendo el código en el editor
+        string tempCode = compilacion.Codigo;
+        compilacion = new Compilacion { Codigo = tempCode };
     }
 }
