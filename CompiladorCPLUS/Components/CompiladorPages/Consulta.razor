@@ -1,0 +1,96 @@
+﻿@page "/consulta"
+@rendermode InteractiveServer
+@using CompiladorCPLUS.Models
+@using CompiladorCPLUS.Service
+@inject CompiladorService compiladorService
+
+<PageTitle>Historial - C+</PageTitle>
+
+<div class="container mt-4">
+    <div class="card shadow-lg border-0 bg-dark text-white">
+        <div class="card-header bg-primary bg-gradient d-flex justify-content-between align-items-center">
+            <h4 class="mb-0"><i class="bi bi-clock-history"></i> Historial de Compilaciones</h4>
+            <span class="badge bg-light text-dark">Total: @compilaciones.Count</span>
+        </div>
+        <div class="card-body bg-light text-dark">
+            @if (compilaciones == null)
+            {
+                <div class="text-center p-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p>Cargando registros de SQLite...</p>
+                </div>
+            }
+            else if (!compilaciones.Any())
+            {
+                <div class="alert alert-info text-center">
+                    <i class="bi bi-info-circle"></i> No hay compilaciones registradas todavía.
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Código</th>
+                                <th>Resultado</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var c in compilaciones)
+                            {
+                                <tr>
+                                    <td class="small">@c.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>
+                                        <code class="text-truncate d-inline-block" style="max-width: 250px; background: #eee; padding: 2px 5px; border-radius: 4px;">
+                                            @c.Codigo
+                                        </code>
+                                    </td>
+                                    <td>
+                                        @if (c.TieneErrores)
+                                        {
+                                            <span class="badge bg-danger">@c.ResultadoAnalisis</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success">Sin Errores</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="btn btn-outline-danger btn-sm" @onclick="() => Eliminar(c.CompilacionId)">
+                                            <i class="bi bi-trash3-fill"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Compilacion> compilaciones = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarDatos();
+    }
+
+    private async Task CargarDatos()
+    {
+        compilaciones = await compiladorService.Listar(c => true);
+    }
+
+    private async Task Eliminar(int id)
+    {
+        if (await compiladorService.Eliminar(id))
+        {
+            await CargarDatos();
+        }
+    }
+}
