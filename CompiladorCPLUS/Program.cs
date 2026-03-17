@@ -15,6 +15,8 @@ builder.Services.AddDbContextFactory<Contexto>(options =>
 
 builder.Services.AddScoped<CompiladorService>();
 builder.Services.AddScoped<LexerService>();
+builder.Services.AddScoped<ParserService>();
+builder.Services.AddScoped<SemanticService>();
 
 var app = builder.Build();
 
