@@ -17,51 +17,59 @@
 
     <div class="row g-4 py-5">
         <div class="col-md-4">
-            <div class="card h-100 border-0 shadow-sm">
+            <div class="card h-100 border-0 shadow-sm bg-dark text-white">
                 <div class="card-body text-center">
                     <div class="feature-icon bg-primary bg-gradient text-white fs-2 mb-3 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
                         <i class="bi bi-code-square"></i>
                     </div>
                     <h3 class="fs-4">Análisis Léxico</h3>
-                    <p>Identificación precisa de palabras reservadas, identificadores, números, operadores y cadenas.</p>
+                    <p class="text-white-50">Identificación precisa de palabras reservadas, identificadores, números y operadores.</p>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card h-100 border-0 shadow-sm">
+            <div class="card h-100 border-0 shadow-sm bg-dark text-white">
                 <div class="card-body text-center">
                     <div class="feature-icon bg-success bg-gradient text-white fs-2 mb-3 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
                         <i class="bi bi-database-check"></i>
                     </div>
                     <h3 class="fs-4">Persistencia SQLite</h3>
-                    <p>Historial completo de compilaciones guardado localmente mediante Entity Framework Core.</p>
+                    <p class="text-white-50">Historial completo de compilaciones guardado localmente mediante Entity Framework Core.</p>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card h-100 border-0 shadow-sm">
+            <div class="card h-100 border-0 shadow-sm bg-dark text-white">
                 <div class="card-body text-center">
                     <div class="feature-icon bg-warning bg-gradient text-white fs-2 mb-3 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
                         <i class="bi bi-exclamation-triangle-fill"></i>
                     </div>
                     <h3 class="fs-4">Detección de Errores</h3>
-                    <p>Sistema capaz de señalar caracteres inválidos y errores de sintaxis en el código fuente.</p>
+                    <p class="text-white-50">Sistema capaz de señalar caracteres inválidos y errores de sintaxis en el código fuente.</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <footer class="pt-3 mt-4 text-muted border-top text-center">
-        Desarrollado por <strong>Luis Angel Gabriel Morillo & James Enmanuel Ureña Paulino</strong> &copy; 2026 - UCNE
+    <footer class="pt-3 mt-4 border-top text-center">
+        <p class="text-white">
+            Desarrollado por <strong>Luis Angel Gabriel Morillo & James Enmanuel Ureña Paulino</strong> &copy; 2026 - UCNE
+        </p>
     </footer>
 </div>
 
 <style>
     body {
-        background-color: #f8f9fa;
+        background-color: #121212;
     }
-    .card:hover {
-        transform: translateY(-5px);
-        transition: transform 0.3s ease;
+
+    .card {
+        transition: transform 0.3s ease, border 0.3s ease;
+        border: 1px solid #333 !important;
     }
+
+        .card:hover {
+            transform: translateY(-10px);
+            border-color: #0d6efd !important;
+        }
 </style>

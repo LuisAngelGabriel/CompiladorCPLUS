@@ -1,48 +1,63 @@
-﻿<div class="top-row ps-3 navbar navbar-dark bg-dark border-bottom border-secondary">
-    <div class="container-fluid">
-        <a class="navbar-brand fw-bold text-primary" href="">
-            <i class="bi bi-cpu-fill me-2"></i>Compilador C+
-        </a>
+﻿<div style="display: flex; min-height: 100vh; background-color: #121212; color: white;">
+
+    <div style="width: 280px; background-color: #000; border-right: 1px solid #333; display: flex; flex-direction: column;">
+        <div class="top-row ps-3 navbar navbar-dark bg-dark border-bottom border-secondary">
+            <div class="container-fluid">
+                <a class="navbar-brand fw-bold text-primary" href="">
+                    <i class="bi bi-cpu-fill me-2"></i>Compilador C+
+                </a>
+            </div>
+        </div>
+
+        <nav class="flex-column mt-2">
+            <div class="nav-item px-3 mb-2">
+                <NavLink class="nav-link d-flex align-items-center rounded-3 custom-nav-link" href="" Match="NavLinkMatch.All">
+                    <i class="bi bi-house-door-fill fs-5 me-3"></i>
+                    <span>Inicio</span>
+                </NavLink>
+            </div>
+
+            <div class="nav-item px-3 mb-2">
+                <NavLink class="nav-link d-flex align-items-center rounded-3 custom-nav-link" href="compilador">
+                    <i class="bi bi-terminal-fill fs-5 me-3 text-info"></i>
+                    <span>Compilador C+</span>
+                </NavLink>
+            </div>
+
+            <div class="nav-item px-3 mb-2">
+                <NavLink class="nav-link d-flex align-items-center rounded-3 custom-nav-link" href="consulta">
+                    <i class="bi bi-database-fill-gear fs-5 me-3 text-warning"></i>
+                    <span>Historial (CRUD)</span>
+                </NavLink>
+            </div>
+        </nav>
     </div>
-</div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+    <main style="flex: 1; overflow-y: auto;">
+        <Router AppAssembly="typeof(Program).Assembly">
+            <Found Context="routeData">
+                <RouteView RouteData="routeData" />
+                <FocusOnNavigate RouteData="routeData" Selector="h1" />
+            </Found>
+            <NotFound>
+                <div class="p-4 text-center">
+                    <h3 class="text-danger">404</h3>
+                    <p>Página no encontrada.</p>
+                </div>
+            </NotFound>
+        </Router>
+    </main>
 
-<div class="nav-scrollable bg-black" onclick="OnNavLinkClick">
-    <nav class="flex-column mt-2">
-        <div class="nav-item px-3 mb-2">
-            <NavLink class="nav-link d-flex align-items-center rounded-3 custom-nav-link" href="" Match="NavLinkMatch.All">
-                <i class="bi bi-house-door-fill fs-5 me-3"></i>
-                <span>Inicio</span>
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3 mb-2">
-            <NavLink class="nav-link d-flex align-items-center rounded-3 custom-nav-link" href="compilador">
-                <i class="bi bi-terminal-fill fs-5 me-3 text-info"></i>
-                <span>Compilador C+</span>
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3 mb-2">
-            <NavLink class="nav-link d-flex align-items-center rounded-3 custom-nav-link" href="consulta">
-                <i class="bi bi-database-fill-gear fs-5 me-3 text-warning"></i>
-                <span>Historial (CRUD)</span>
-            </NavLink>
-        </div>
-    </nav>
 </div>
 
 <style>
-    .bg-black {
-        background-color: #000000 !important;
-    }
-
     .custom-nav-link {
         color: #adb5bd !important;
         transition: all 0.3s ease;
         padding: 0.8rem 1rem !important;
-        border-radius: 8px;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
     }
 
         .custom-nav-link:hover {
@@ -57,15 +72,8 @@
             border-left: 4px solid #0d6efd;
         }
 
-    .nav-link i {
-        width: 28px;
-        text-align: center;
-        display: flex;
-        justify-content: center;
-    }
-
-    .nav-link span {
-        font-weight: 500;
-        letter-spacing: 0.5px;
-    }
+        .custom-nav-link i {
+            width: 30px;
+            text-align: center;
+        }
 </style>

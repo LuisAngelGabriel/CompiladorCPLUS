@@ -5,13 +5,14 @@ namespace CompiladorCPLUS.Service;
 
 public class SemanticService
 {
-    // Esta tabla almacena el estado de la última compilación para mostrarla en la UI
-    private Dictionary<string, string> _ultimaTablaSimbolos = new();
+    private Dictionary<string, string> _tablaTipos = new();
+    private Dictionary<string, string> _tablaValores = new();
 
     public List<string> AnalizarSemantica(string codigo)
     {
         var errores = new List<string>();
-        _ultimaTablaSimbolos = new Dictionary<string, string>();
+        _tablaTipos = new Dictionary<string, string>();
+        _tablaValores = new Dictionary<string, string>();
 
         if (string.IsNullOrWhiteSpace(codigo)) return errores;
 
@@ -23,51 +24,56 @@ public class SemanticService
             if (string.IsNullOrEmpty(linea) || linea.StartsWith("//") || linea.StartsWith("/*")) continue;
             int numLinea = i + 1;
 
-            // 1. DETECCIÓN DE DECLARACIONES (int x = 10;)
             if (linea.StartsWith("int ") || linea.StartsWith("float ") || linea.StartsWith("string "))
             {
                 var partes = linea.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 if (partes.Length < 2) continue;
 
-                string tipo = partes[0]; // int, float o string
+                string tipo = partes[0];
                 string resto = string.Join(" ", partes.Skip(1)).Replace(";", "");
-
                 var asignacion = resto.Split('=');
                 string nombreVar = asignacion[0].Trim();
 
-                // Regla: No duplicar nombres de variables
-                if (_ultimaTablaSimbolos.ContainsKey(nombreVar))
+                if (_tablaTipos.ContainsKey(nombreVar))
                 {
-                    errores.Add($"Error Semántico (Línea {numLinea}): La variable '{nombreVar}' ya fue declarada en este ámbito.");
+                    errores.Add($"Error Semántico (Línea {numLinea}): La variable '{nombreVar}' ya fue declarada.");
                 }
                 else
                 {
-                    _ultimaTablaSimbolos.Add(nombreVar, tipo);
-                }
-
-                // Validación de tipo en la asignación inmediata
-                if (asignacion.Length > 1)
-                {
-                    string valor = asignacion[1].Trim();
-                    ValidarCoherenciaTipo(tipo, valor, numLinea, errores);
+                    _tablaTipos.Add(nombreVar, tipo);
+                    if (asignacion.Length > 1)
+                    {
+                        string valor = asignacion[1].Trim();
+                        if (!valor.Contains("input("))
+                        {
+                            ValidarCoherenciaTipo(tipo, valor, numLinea, errores);
+                            _tablaValores[nombreVar] = valor.Replace("\"", "");
+                        }
+                    }
                 }
             }
-            // 2. DETECCIÓN DE USO/ASIGNACIÓN (x = 20;)
-            else if (linea.Contains("=") && !linea.Contains("if") && !linea.Contains("while"))
+            else if (linea.Contains("=") && !linea.Contains("if") && !linea.Contains("input(") && !linea.Contains("=="))
             {
                 var partes = linea.Split('=');
                 string nombreVar = partes[0].Trim();
                 string valor = partes[1].Replace(";", "").Trim();
 
-                // Regla: No puedes usar lo que no existe
-                if (!_ultimaTablaSimbolos.ContainsKey(nombreVar))
+                if (!_tablaTipos.ContainsKey(nombreVar))
                 {
-                    errores.Add($"Error Semántico (Línea {numLinea}): El identificador '{nombreVar}' no existe en el contexto actual.");
+                    errores.Add($"Error Semántico (Línea {numLinea}): La variable '{nombreVar}' no existe.");
                 }
                 else
                 {
-                    string tipoRegistrado = _ultimaTablaSimbolos[nombreVar];
-                    ValidarCoherenciaTipo(tipoRegistrado, valor, numLinea, errores);
+                    ValidarCoherenciaTipo(_tablaTipos[nombreVar], valor, numLinea, errores);
+                    _tablaValores[nombreVar] = valor.Replace("\"", "");
+                }
+            }
+            else if (linea.Contains("input("))
+            {
+                var varName = linea.Split('=')[0].Replace("string", "").Replace("int", "").Replace("float", "").Trim();
+                if (!_tablaTipos.ContainsKey(varName))
+                {
+                    errores.Add($"Error Semántico (Línea {numLinea}): La variable '{varName}' debe declararse antes de usarse con input.");
                 }
             }
         }
@@ -76,43 +82,18 @@ public class SemanticService
 
     private void ValidarCoherenciaTipo(string tipo, string valor, int linea, List<string> errores)
     {
-        // Validación para Enteros
-        if (tipo == "int")
-        {
-            if (valor.Contains(".") || valor.Contains("\""))
-            {
-                errores.Add($"Error de Tipo (Línea {linea}): Conflicto de tipos. No se puede convertir 'Literal' a 'int'.");
-            }
-            else if (!int.TryParse(valor, out _) && !EsNombreVariableValido(valor))
-            {
-                errores.Add($"Error de Tipo (Línea {linea}): El valor asignado a '{tipo}' no es un formato numérico válido.");
-            }
-        }
+        if (tipo == "int" && (valor.Contains(".") || valor.Contains("\"")))
+            errores.Add($"Error de Tipo (Línea {linea}): No se puede asignar a 'int'.");
 
-        // Validación para Strings
-        if (tipo == "string" && !valor.StartsWith("\""))
-        {
-            // Si no empieza con comilla y no es otra variable existente
-            if (!_ultimaTablaSimbolos.ContainsKey(valor))
-            {
-                errores.Add($"Error de Tipo (Línea {linea}): Se esperaba una cadena literal (entre comillas) para el tipo 'string'.");
-            }
-        }
+        if (tipo == "string" && !valor.StartsWith("\"") && !_tablaTipos.ContainsKey(valor))
+            errores.Add($"Error de Tipo (Línea {linea}): Se esperaba comillas.");
     }
 
-    private bool EsNombreVariableValido(string valor)
+    public void ActualizarValorDesdeInput(string nombre, string valor)
     {
-        return _ultimaTablaSimbolos.ContainsKey(valor);
+        if (_tablaTipos.ContainsKey(nombre)) _tablaValores[nombre] = valor;
     }
 
-    // MÉTODO CLAVE: Permite que el CompiladorPage obtenga los datos para la tabla de la derecha
-    public Dictionary<string, string> ObtenerTablaSimbolos(string codigo)
-    {
-        // Si la tabla está vacía, hacemos un análisis rápido para poblarla
-        if (_ultimaTablaSimbolos.Count == 0 && !string.IsNullOrEmpty(codigo))
-        {
-            AnalizarSemantica(codigo);
-        }
-        return _ultimaTablaSimbolos;
-    }
+    public Dictionary<string, string> ObtenerTablaSimbolos() => _tablaTipos;
+    public Dictionary<string, string> ObtenerValores() => _tablaValores;
 }

@@ -1,4 +1,5 @@
 ﻿using CompiladorCPLUS.Models;
+using System.Collections.Generic;
 
 namespace CompiladorCPLUS.Service;
 
@@ -6,7 +7,7 @@ public class LexerService
 {
     private readonly HashSet<string> _caracteresValidos = new()
     {
-        "+", "-", "*", "/", "=", ">", "<", "!", ";", "{", "}", "(", ")", "\"", ".", "_"
+        "+", "-", "*", "/", "=", ">", "<", "!", ";", "{", "}", "(", ")", "\"", ".", "_", ",", "#", ":"
     };
 
     public List<string> ValidarCodigo(string source)
@@ -23,10 +24,9 @@ public class LexerService
             {
                 char c = contenidoLinea[j];
 
-                // Si no es letra, ni número, ni espacio, ni un caracter válido de nuestra lista...
                 if (!char.IsLetterOrDigit(c) && !char.IsWhiteSpace(c) && !_caracteresValidos.Contains(c.ToString()))
                 {
-                    errores.Add($"Error en Línea {i + 1}, Columna {j + 1}: El caracter '{c}' no es reconocido por el compilador C+.");
+                    errores.Add($"Error Léxico (Línea {i + 1}, Columna {j + 1}): El caracter '{c}' no es reconocido.");
                 }
             }
         }

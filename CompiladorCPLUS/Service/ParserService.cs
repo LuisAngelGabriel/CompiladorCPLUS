@@ -1,5 +1,6 @@
 ﻿using CompiladorCPLUS.Models;
-using System.Text.RegularExpressions;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace CompiladorCPLUS.Service;
 
@@ -15,44 +16,34 @@ public class ParserService
         for (int i = 0; i < lineas.Length; i++)
         {
             string linea = lineas[i].Trim();
-            if (string.IsNullOrEmpty(linea) || linea.StartsWith("//") || linea.StartsWith("/*")) continue;
-
+            if (string.IsNullOrEmpty(linea) || linea.StartsWith("//") || linea.StartsWith("#") || linea.StartsWith("using")) continue;
             int numLinea = i + 1;
 
-            // 1. Validar que toda instrucción (que no sea if/else/for/{/}) termine en punto y coma
-            if (!linea.EndsWith(";") && !linea.EndsWith("{") && !linea.EndsWith("}") && !linea.Contains("if") && !linea.Contains("else"))
+            bool esEstructuraValida = linea.EndsWith(";") || linea.EndsWith("{") || linea.EndsWith("}") ||
+                                     linea.Contains("if") || linea.Contains("main()") || linea.Contains("else");
+
+            if (!esEstructuraValida)
             {
-                erroresSintacticos.Add($"Error Sintáctico (Línea {numLinea}): Falta el punto y coma ';' al final de la instrucción.");
+                erroresSintacticos.Add($"Error Sintáctico (Línea {numLinea}): Falta ';' al final de la instrucción.");
             }
 
-            // 2. Validar estructura de asignación (ej: int x = 10;)
-            if (linea.Contains("=") && !linea.Contains("if"))
+            if (linea.Contains("cout") || linea.Contains("cin") || linea.Contains("print") || linea.Contains("input"))
             {
-                // Verifica que haya algo antes y después del igual
-                var partes = linea.Split('=');
-                if (partes.Length < 2 || string.IsNullOrWhiteSpace(partes[0]) || string.IsNullOrWhiteSpace(partes[1].Replace(";", "")))
-                {
-                    erroresSintacticos.Add($"Error Sintáctico (Línea {numLinea}): Asignación incompleta. Se esperaba un valor después del '='.");
-                }
+                if ((linea.Contains("print") || linea.Contains("input")) && (!linea.Contains("(") || !linea.Contains(")")))
+                    erroresSintacticos.Add($"Error Sintáctico (Línea {numLinea}): La función requiere '( )'.");
+
+                if (linea.Contains("cout") && !linea.Contains("<<"))
+                    erroresSintacticos.Add($"Error Sintáctico (Línea {numLinea}): 'cout' requiere el operador '<<'.");
+
+                if (linea.Contains("cin") && !linea.Contains(">>"))
+                    erroresSintacticos.Add($"Error Sintáctico (Línea {numLinea}): 'cin' requiere el operador '>>'.");
             }
 
-            // 3. Validar paréntesis en estructuras de control
-            if (linea.Contains("if"))
-            {
-                if (!linea.Contains("(") || !linea.Contains(")"))
-                {
-                    erroresSintacticos.Add($"Error Sintáctico (Línea {numLinea}): La condición del 'if' debe estar encerrada entre paréntesis '( )'.");
-                }
-            }
-
-            // 4. Validar llaves de apertura/cierre (Balance de bloques)
-            // Nota: Para un análisis profundo se usaría una pila, aquí validamos por línea simple
-            if (linea.Contains("{") && linea.Contains("}") && linea.IndexOf("{") > linea.IndexOf("}"))
-            {
-                erroresSintacticos.Add($"Error Sintáctico (Línea {numLinea}): El orden de las llaves '{{ }}' es incorrecto.");
-            }
+            int aperturas = linea.Count(f => f == '{');
+            int cierres = linea.Count(f => f == '}');
+            if (aperturas > 0 && cierres > 0 && linea.IndexOf("{") > linea.LastIndexOf("}"))
+                erroresSintacticos.Add($"Error Sintáctico (Línea {numLinea}): Orden de llaves incorrecto.");
         }
-
         return erroresSintacticos;
     }
 }

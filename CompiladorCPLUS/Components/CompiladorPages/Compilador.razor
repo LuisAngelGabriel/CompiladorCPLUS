@@ -6,151 +6,168 @@
 @inject LexerService lexerService
 @inject ParserService parserService
 @inject SemanticService semanticService
+@inject IJSRuntime JSRuntime
 
-<PageTitle>Editor C+ | UCNE PRO</PageTitle>
+<PageTitle>IDE C+ Interactiva | UCNE</PageTitle>
 
 <div class="container mt-4">
     <div class="row">
         <div class="col-lg-8">
             <div class="card bg-dark text-white shadow-lg border-0 mb-4">
                 <div class="card-header border-secondary bg-gradient d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0 text-primary"><i class="bi bi-code-slash"></i> IDE C+ <small class="text-muted" style="font-size: 0.6em;">v2.0</small></h4>
+                    <h4 class="mb-0 text-primary"><i class="bi bi-code-slash"></i> IDE INTERACTIVO</h4>
                     <div class="text-muted small">Luis Gabriel & James Ureña</div>
                 </div>
-                
                 <div class="card-body p-0">
-                    <textarea @bind="compilacion.Codigo" 
-                              class="form-control bg-black text-success font-monospace p-4 border-0"
-                              rows="15" 
-                              style="outline: none; resize: none; font-size: 1rem; line-height: 1.5; border-radius: 0;" 
-                              placeholder="// Escribe tu código C+ aquí..."></textarea>
+                    <textarea @bind="compilacion.Codigo" class="form-control bg-black text-success font-monospace p-4 border-0" rows="12" style="outline: none; resize: none;"></textarea>
                 </div>
-
                 <div class="card-footer border-secondary bg-dark p-3">
-                    <button class="btn btn-primary w-100 fw-bold py-2 shadow" @onclick="Compilar">
-                        <i class="bi bi-play-fill"></i> COMPILAR Y EJECUTAR
-                    </button>
+                    <button class="btn btn-primary w-100 fw-bold shadow" @onclick="Compilar">EJECUTAR PROGRAMA</button>
                 </div>
             </div>
 
-            <div class="bg-black text-white p-3 rounded shadow font-monospace" 
-                 style="min-height: 150px; border-left: 5px solid @(errores.Any() ? "#ff4757" : "#2ed573");">
-                <div class="text-secondary border-bottom border-secondary pb-2 mb-2 d-flex justify-content-between small">
+            <div class="bg-black text-white p-3 rounded shadow mb-4" style="min-height: 180px; border-left: 5px solid #0d6efd;">
+                <div class="text-info border-bottom border-secondary pb-1 mb-2 small d-flex justify-content-between font-monospace">
                     <span>TERMINAL DE SALIDA</span>
-                    <span>@DateTime.Now.ToString("HH:mm:ss")</span>
+                    <button class="btn btn-sm btn-outline-secondary py-0" style="font-size: 0.7rem;" @onclick='() => SalidaTerminal = ""'>LIMPIAR</button>
                 </div>
-                @if (errores.Any())
-                {
+                <div class="font-monospace" style="white-space: pre-wrap; font-size: 0.9rem;">
+                    @if (!string.IsNullOrEmpty(SalidaTerminal))
+                    {
+                        <span>@SalidaTerminal</span>
+                    }
+                    else
+                    {
+                        <span class="text-muted small">> Esperando ejecución...</span>
+                    }
+                </div>
+            </div>
+
+            @if (errores.Any())
+            {
+                <div class="alert alert-danger bg-dark text-danger border-danger small font-monospace">
                     @foreach (var error in errores)
                     {
-                        <div class="text-danger mt-1 small"><span class="text-white-50">>></span> @error</div>
+                        <div><i class="bi bi-exclamation-triangle-fill me-2"></i>@error</div>
                     }
-                }
-                else if (compilacionRealizada)
-                {
-                    <div class="text-success mt-2">
-                        <i class="bi bi-check-circle"></i> [SUCCESS] Compilación finalizada sin errores.
-                    </div>
-                }
-                else
-                {
-                    <div class="text-muted mt-2 small">Esperando entrada de código...</div>
-                }
-            </div>
+                </div>
+            }
         </div>
 
         <div class="col-lg-4">
-            <div class="card border-info bg-dark text-white shadow h-100">
-                <div class="card-header bg-info text-dark fw-bold py-3">
-                    <i class="bi bi-cpu"></i> TABLA DE SÍMBOLOS
-                </div>
-                <div class="card-body p-0" style="max-height: 600px; overflow-y: auto;">
-                    <table class="table table-dark table-hover mb-0 text-center small">
-                        <thead class="table-secondary text-dark">
-                            <tr>
-                                <th>Dirección</th>
-                                <th>Var</th>
-                                <th>Tipo</th>
-                            </tr>
-                        </thead>
+            <div class="card border-info bg-dark text-white shadow">
+                <div class="card-header bg-info text-dark fw-bold text-center small">TABLA DE SÍMBOLOS (RAM)</div>
+                <div class="card-body p-0">
+                    <table class="table table-dark table-sm mb-0 text-center small">
+                        <thead><tr><th>Var</th><th>Tipo</th><th>Valor</th></tr></thead>
                         <tbody>
-                            @if (VariablesEnMemoria.Any())
-                            {
-                                @foreach (var var in VariablesEnMemoria)
-                                {
-                                    <tr>
-                                        <td class="text-info font-monospace">0x@var.Key.GetHashCode().ToString("X4")</td>
-                                        <td class="fw-bold">@var.Key</td>
-                                        <td><span class="badge bg-primary">@var.Value</span></td>
-                                    </tr>
-                                }
-                            }
-                            else
+                            @foreach (var item in VariablesEnMemoria)
                             {
                                 <tr>
-                                    <td colspan="3" class="py-4 text-muted">No hay variables declaradas</td>
+                                    <td class="text-info">@item.Key</td>
+                                    <td><span class="badge bg-primary">@item.Value</span></td>
+                                    <td class="text-warning">@(ValoresActuales.ContainsKey(item.Key) ? ValoresActuales[item.Key] : "-")</td>
                                 </tr>
                             }
                         </tbody>
                     </table>
-                </div>
-                <div class="card-footer bg-dark border-info text-center">
-                    <small class="text-info">Análisis Semántico Activo</small>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<style>
-    body { background-color: #121212; }
-    textarea::-webkit-scrollbar { width: 8px; }
-    textarea::-webkit-scrollbar-thumb { background: #222; border-radius: 4px; }
-    .table-hover tbody tr:hover { background-color: #1a1a1a !important; }
-</style>
+<script>
+    window.pedirDato = (mensaje) => {
+        return prompt(mensaje) || "";
+    };
+</script>
 
 @code {
     private Compilacion compilacion = new();
     private List<string> errores = new();
     private Dictionary<string, string> VariablesEnMemoria = new();
-    private bool compilacionRealizada = false;
+    private Dictionary<string, string> ValoresActuales = new();
+    private string SalidaTerminal = "";
 
     private async Task Compilar()
     {
-        compilacionRealizada = false;
-        errores.Clear();
-        VariablesEnMemoria.Clear();
+        SalidaTerminal = "> Compilando código...\n";
 
-        if (string.IsNullOrWhiteSpace(compilacion.Codigo))
+        var errLex = lexerService.ValidarCodigo(compilacion.Codigo);
+        var errSin = parserService.AnalizarSintaxis(compilacion.Codigo);
+        var errSem = semanticService.AnalizarSemantica(compilacion.Codigo);
+
+        errores = errLex.Concat(errSin).Concat(errSem).ToList();
+        VariablesEnMemoria = semanticService.ObtenerTablaSimbolos();
+        ValoresActuales = semanticService.ObtenerValores();
+
+        if (!errores.Any())
         {
-            errores.Add("Error: El editor está vacío.");
-            return;
+            SalidaTerminal += "> Análisis exitoso. Ejecutando binario...\n------------------------\n";
+            await EjecutarInterpretacion();
+        }
+        else
+        {
+            SalidaTerminal += "!! Errores detectados en la compilación.\n";
         }
 
-        // 1. Análisis Léxico
-        var eLexicos = lexerService.ValidarCodigo(compilacion.Codigo);
-        
-        // 2. Análisis Sintáctico
-        var eSintacticos = parserService.AnalizarSintaxis(compilacion.Codigo);
-
-        // 3. Análisis Semántico y Obtención de Tabla de Símbolos
-        // Nota: Asegúrate de que tu SemanticService tenga un método para obtener la tabla actual
-        errores = eLexicos.Concat(eSintacticos).Concat(semanticService.AnalizarSemantica(compilacion.Codigo)).ToList();
-        
-        // Extraemos la tabla de símbolos para la vista (esto asume que SemanticService guarda el estado o lo devuelve)
-        VariablesEnMemoria = semanticService.ObtenerTablaSimbolos(compilacion.Codigo);
-
-        compilacionRealizada = true;
-
-        // Persistencia
         compilacion.TieneErrores = errores.Any();
         compilacion.Fecha = DateTime.Now;
-        compilacion.ResultadoAnalisis = errores.Any() ? $"{errores.Count} errores" : "Limpio";
-        
+        compilacion.ResultadoAnalisis = errores.Any() ? "Errores" : "Exito";
         await compiladorService.Guardar(compilacion);
+    }
 
-        // Reset del objeto pero manteniendo el código en el editor
-        string tempCode = compilacion.Codigo;
-        compilacion = new Compilacion { Codigo = tempCode };
+    private async Task EjecutarInterpretacion()
+    {
+        var lineas = compilacion.Codigo.Split('\n');
+        foreach (var lineaRaw in lineas)
+        {
+            var l = lineaRaw.Trim();
+            if (string.IsNullOrEmpty(l) || l.StartsWith("#") || l.StartsWith("using") || l.Contains("main") || l == "{" || l == "}") continue;
+
+            if (l.Contains("cout <<"))
+            {
+                var partes = l.Split("<<");
+                foreach (var parte in partes.Skip(1))
+                {
+                    var item = parte.Replace(";", "").Replace("endl", "").Replace("\"", "").Trim();
+                    if (ValoresActuales.ContainsKey(item)) SalidaTerminal += ValoresActuales[item];
+                    else SalidaTerminal += item;
+                }
+                SalidaTerminal += "\n";
+            }
+            else if (l.Contains("cin >>"))
+            {
+                var varNombre = l.Split(">>")[1].Replace(";", "").Trim();
+                var resUser = await JSRuntime.InvokeAsync<string>("pedirDato", $"Ingrese {varNombre}:");
+                semanticService.ActualizarValorDesdeInput(varNombre, resUser);
+                ValoresActuales[varNombre] = resUser;
+                SalidaTerminal += "> " + varNombre + ": " + resUser + "\n";
+            }
+            else if (l.Contains("input("))
+            {
+                var msg = l.Split('(', ')')[1].Replace("\"", "");
+                var resUser = await JSRuntime.InvokeAsync<string>("pedirDato", msg);
+                var varDestino = l.Split('=')[0].Replace("string", "").Replace("int", "").Replace("float", "").Trim();
+
+                semanticService.ActualizarValorDesdeInput(varDestino, resUser);
+                ValoresActuales[varDestino] = resUser;
+                SalidaTerminal += "> " + msg + ": " + resUser + "\n";
+            }
+            else if (l.Contains("print("))
+            {
+                var contenido = l.Split('(', ')')[1].Replace("\"", "").Trim();
+                SalidaTerminal += (ValoresActuales.ContainsKey(contenido) ? ValoresActuales[contenido] : contenido) + "\n";
+            }
+            else if (l.StartsWith("return "))
+            {
+                var v = l.Replace("return", "").Replace(";", "").Trim();
+                var valorFinal = ValoresActuales.ContainsKey(v) ? ValoresActuales[v] : v;
+                SalidaTerminal += "------------------------\nEXIT CODE: " + valorFinal;
+            }
+            StateHasChanged();
+            await Task.Delay(50);
+        }
     }
 }
