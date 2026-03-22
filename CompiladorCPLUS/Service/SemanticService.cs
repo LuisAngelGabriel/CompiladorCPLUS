@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace CompiladorCPLUS.Service;
@@ -7,6 +8,7 @@ public class SemanticService
 {
     private Dictionary<string, string> _tablaTipos = new();
     private Dictionary<string, string> _tablaValores = new();
+    private readonly string[] _tiposValidos = { "int", "float", "double", "string", "bool", "char", "long", "short", "unsigned" };
 
     public List<string> AnalizarSemantica(string codigo)
     {
@@ -21,72 +23,32 @@ public class SemanticService
         for (int i = 0; i < lineas.Length; i++)
         {
             string linea = lineas[i].Trim();
-            if (string.IsNullOrEmpty(linea) || linea.StartsWith("//") || linea.StartsWith("/*")) continue;
+            if (string.IsNullOrEmpty(linea) || linea.StartsWith("//") || linea.StartsWith("#") || linea.StartsWith("using") || linea == "{" || linea == "}") continue;
             int numLinea = i + 1;
 
-            if (linea.StartsWith("int ") || linea.StartsWith("float ") || linea.StartsWith("string "))
+            if (_tiposValidos.Any(t => linea.StartsWith(t)))
             {
-                var partes = linea.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                if (partes.Length < 2) continue;
-
-                string tipo = partes[0];
-                string resto = string.Join(" ", partes.Skip(1)).Replace(";", "");
-                var asignacion = resto.Split('=');
-                string nombreVar = asignacion[0].Trim();
+                var partesDeclaracion = linea.Replace(";", "").Split('=')[0].Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                string nombreVar = partesDeclaracion.Last();
+                string tipo = partesDeclaracion[0];
 
                 if (_tablaTipos.ContainsKey(nombreVar))
-                {
                     errores.Add($"Error Semántico (Línea {numLinea}): La variable '{nombreVar}' ya fue declarada.");
-                }
                 else
-                {
                     _tablaTipos.Add(nombreVar, tipo);
-                    if (asignacion.Length > 1)
-                    {
-                        string valor = asignacion[1].Trim();
-                        if (!valor.Contains("input("))
-                        {
-                            ValidarCoherenciaTipo(tipo, valor, numLinea, errores);
-                            _tablaValores[nombreVar] = valor.Replace("\"", "");
-                        }
-                    }
-                }
             }
-            else if (linea.Contains("=") && !linea.Contains("if") && !linea.Contains("input(") && !linea.Contains("=="))
+            else if (linea.Contains("=") && !linea.Contains("if") && !linea.Contains("=="))
             {
-                var partes = linea.Split('=');
-                string nombreVar = partes[0].Trim();
-                string valor = partes[1].Replace(";", "").Trim();
+                var varNombreRaw = linea.Split('=')[0].Trim();
+                var busquedaVar = varNombreRaw.Contains(".") ? varNombreRaw.Split('.')[0] : varNombreRaw;
 
-                if (!_tablaTipos.ContainsKey(nombreVar))
+                if (!_tablaTipos.ContainsKey(busquedaVar) && !varNombreRaw.Contains("static_cast"))
                 {
-                    errores.Add($"Error Semántico (Línea {numLinea}): La variable '{nombreVar}' no existe.");
-                }
-                else
-                {
-                    ValidarCoherenciaTipo(_tablaTipos[nombreVar], valor, numLinea, errores);
-                    _tablaValores[nombreVar] = valor.Replace("\"", "");
-                }
-            }
-            else if (linea.Contains("input("))
-            {
-                var varName = linea.Split('=')[0].Replace("string", "").Replace("int", "").Replace("float", "").Trim();
-                if (!_tablaTipos.ContainsKey(varName))
-                {
-                    errores.Add($"Error Semántico (Línea {numLinea}): La variable '{varName}' debe declararse antes de usarse con input.");
+                    errores.Add($"Error Semántico (Línea {numLinea}): La variable '{varNombreRaw}' no existe.");
                 }
             }
         }
         return errores;
-    }
-
-    private void ValidarCoherenciaTipo(string tipo, string valor, int linea, List<string> errores)
-    {
-        if (tipo == "int" && (valor.Contains(".") || valor.Contains("\"")))
-            errores.Add($"Error de Tipo (Línea {linea}): No se puede asignar a 'int'.");
-
-        if (tipo == "string" && !valor.StartsWith("\"") && !_tablaTipos.ContainsKey(valor))
-            errores.Add($"Error de Tipo (Línea {linea}): Se esperaba comillas.");
     }
 
     public void ActualizarValorDesdeInput(string nombre, string valor)
