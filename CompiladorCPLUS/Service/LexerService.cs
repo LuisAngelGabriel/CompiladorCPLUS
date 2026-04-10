@@ -7,7 +7,7 @@ public class LexerService
 {
     private readonly HashSet<string> _caracteresValidos = new()
     {
-        "+", "-", "*", "/", "=", ">", "<", "!", ";", "{", "}", "(", ")", "\"", ".", "_", ",", "#", ":", "&", "|", "@", "'"
+        "+", "-", "*", "/", "=", ">", "<", "!", ";", "{", "}", "(", ")", "\"", ".", "_", ",", "#", ":", "&", "|", "'", "[", "]", "%", "¡", "?", ":"
     };
 
     private readonly HashSet<string> _palabrasReservadas = new()
@@ -18,16 +18,14 @@ public class LexerService
         "operator", "private", "protected", "public", "register", "reinterpret_cast", "return",
         "short", "signed", "sizeof", "static", "static_cast", "struct", "switch", "template",
         "this", "throw", "true", "try", "typedef", "typeid", "typename", "union", "unsigned",
-        "using", "virtual", "void", "volatile", "wchar_t", "while"
+        "using", "virtual", "void", "volatile", "wchar_t", "while", "cout", "cin", "endl"
     };
 
     public List<string> ValidarCodigo(string source)
     {
         var errores = new List<string>();
         if (string.IsNullOrEmpty(source)) return errores;
-
         string[] lineas = source.Split('\n');
-
         for (int i = 0; i < lineas.Length; i++)
         {
             string contenidoLinea = lineas[i];
@@ -36,7 +34,7 @@ public class LexerService
                 char c = contenidoLinea[j];
                 if (!char.IsLetterOrDigit(c) && !char.IsWhiteSpace(c) && !_caracteresValidos.Contains(c.ToString()))
                 {
-                    errores.Add($"Error Léxico (Línea {i + 1}, Columna {j + 1}): El caracter '{c}' no es reconocido.");
+                    errores.Add($"[LÉXICO] (Línea {i + 1}, Columna {j + 1}): El carácter '{c}' no es reconocido.");
                 }
             }
         }

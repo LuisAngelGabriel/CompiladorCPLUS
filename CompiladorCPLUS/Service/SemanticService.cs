@@ -6,56 +6,53 @@ namespace CompiladorCPLUS.Service;
 
 public class SemanticService
 {
-    private Dictionary<string, string> _tablaTipos = new();
-    private Dictionary<string, string> _tablaValores = new();
-    private readonly string[] _tiposValidos = { "int", "float", "double", "string", "bool", "char", "long", "short", "unsigned" };
+    private HashSet<string> _tablaSimbolos = new();
+    private readonly string[] _tiposValidos = { "int", "float", "double", "string", "bool", "long" };
 
     public List<string> AnalizarSemantica(string codigo)
     {
         var errores = new List<string>();
-        _tablaTipos = new Dictionary<string, string>();
-        _tablaValores = new Dictionary<string, string>();
-
+        _tablaSimbolos.Clear();
         if (string.IsNullOrWhiteSpace(codigo)) return errores;
 
         string[] lineas = codigo.Split('\n');
-
         for (int i = 0; i < lineas.Length; i++)
         {
-            string linea = lineas[i].Trim();
-            if (string.IsNullOrEmpty(linea) || linea.StartsWith("//") || linea.StartsWith("#") || linea.StartsWith("using") || linea == "{" || linea == "}") continue;
             int numLinea = i + 1;
+            string lineaOriginal = lineas[i].Split("//")[0].Trim();
+            if (string.IsNullOrEmpty(lineaOriginal) || lineaOriginal.StartsWith("#") || lineaOriginal.Contains("using") || lineaOriginal == "{" || lineaOriginal == "}") continue;
 
-            if (_tiposValidos.Any(t => linea.StartsWith(t)))
+            string tipoEncontrado = _tiposValidos.FirstOrDefault(t => lineaOriginal.StartsWith(t));
+
+            if (tipoEncontrado != null && !lineaOriginal.Contains("("))
             {
-                var partesDeclaracion = linea.Replace(";", "").Split('=')[0].Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                string nombreVar = partesDeclaracion.Last();
-                string tipo = partesDeclaracion[0];
-
-                if (_tablaTipos.ContainsKey(nombreVar))
-                    errores.Add($"Error Semántico (Línea {numLinea}): La variable '{nombreVar}' ya fue declarada.");
-                else
-                    _tablaTipos.Add(nombreVar, tipo);
-            }
-            else if (linea.Contains("=") && !linea.Contains("if") && !linea.Contains("=="))
-            {
-                var varNombreRaw = linea.Split('=')[0].Trim();
-                var busquedaVar = varNombreRaw.Contains(".") ? varNombreRaw.Split('.')[0] : varNombreRaw;
-
-                if (!_tablaTipos.ContainsKey(busquedaVar) && !varNombreRaw.Contains("static_cast"))
+                string contenido = lineaOriginal.Substring(tipoEncontrado.Length).Replace(";", "").Trim();
+                var declaraciones = contenido.Split(',');
+                foreach (var decl in declaraciones)
                 {
-                    errores.Add($"Error Semántico (Línea {numLinea}): La variable '{varNombreRaw}' no existe.");
+                    string nombreVar = decl.Split('=')[0].Trim();
+                    if (nombreVar.Contains(" ")) nombreVar = nombreVar.Split(' ').Last();
+
+                    if (_tablaSimbolos.Contains(nombreVar))
+                        errores.Add($"[SEMÁNTICO] (Línea {numLinea}): La variable '{nombreVar}' ya ha sido declarada.");
+                    else
+                        _tablaSimbolos.Add(nombreVar);
+                }
+            }
+            else if (lineaOriginal.Contains("=") && !lineaOriginal.Contains("==") && !lineaOriginal.StartsWith("for"))
+            {
+                string variable = lineaOriginal.Split('=')[0].Trim();
+                string identificador = variable.Split(' ', '[', '.', '+', '-')[0];
+
+                if (!string.IsNullOrEmpty(identificador) &&
+                    !_tablaSimbolos.Contains(identificador) &&
+                    !identificador.Contains("return") &&
+                    !identificador.Contains("cout"))
+                {
+                    errores.Add($"[SEMÁNTICO] (Línea {numLinea}): El identificador '{identificador}' no ha sido declarado.");
                 }
             }
         }
         return errores;
     }
-
-    public void ActualizarValorDesdeInput(string nombre, string valor)
-    {
-        if (_tablaTipos.ContainsKey(nombre)) _tablaValores[nombre] = valor;
-    }
-
-    public Dictionary<string, string> ObtenerTablaSimbolos() => _tablaTipos;
-    public Dictionary<string, string> ObtenerValores() => _tablaValores;
 }

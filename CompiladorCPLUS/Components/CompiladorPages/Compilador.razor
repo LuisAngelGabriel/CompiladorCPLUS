@@ -8,59 +8,52 @@
 @inject SemanticService semanticService
 @inject IJSRuntime JSRuntime
 
-<PageTitle>IDE C+ Interactiva | UCNE</PageTitle>
+<PageTitle>IDE C+ Senior | UCNE</PageTitle>
 
 <div class="container-fluid mt-4 px-4">
     <div class="row">
         <div class="col-lg-7">
             <div class="card bg-dark text-white shadow-lg border-0 mb-4">
                 <div class="card-header border-secondary bg-gradient d-flex justify-content-between align-items-center py-3">
-                    <h4 class="mb-0 text-primary fw-bold">
-                        <i class="bi bi-code-slash me-2"></i>IDE INTERACTIVO
-                    </h4>
+                    <h4 class="mb-0 text-primary fw-bold"><i class="bi bi-cpu me-2"></i>IDE C+ SENIOR</h4>
                     <div class="authors-badge">
-                        <span class="text-white-50 small text-uppercase me-2">By:</span>
-                        <span class="badge rounded-pill bg-primary text-white px-3 py-2 fw-bold shadow-sm border border-info">
-                            <i class="bi bi-person-badge-fill me-1"></i> Luis Gabriel & James Ureña
-                        </span>
+                        <span class="badge rounded-pill bg-primary px-3 py-2 fw-bold shadow-sm">Luis Gabriel & James Ureña</span>
                     </div>
                 </div>
                 <div class="card-body p-0">
-                    <textarea @bind="compilacion.Codigo" class="form-control bg-black text-success font-monospace p-4 border-0" rows="18" style="outline: none; resize: none; font-size: 1rem;"></textarea>
+                    <textarea @bind="compilacion.Codigo" class="form-control bg-black text-success font-monospace p-4 border-0" rows="18" style="outline: none; resize: none;"></textarea>
                 </div>
                 <div class="card-footer border-secondary bg-dark p-2 d-flex justify-content-center">
-                    <button class="btn btn-primary fw-bold shadow-sm px-5" @onclick="Compilar">
-                        <i class="bi bi-play-fill me-1"></i> EJECUTAR PROGRAMA
-                    </button>
+                    <button class="btn btn-primary fw-bold px-5" @onclick="Compilar">EJECUTAR PROGRAMA</button>
                 </div>
             </div>
         </div>
 
         <div class="col-lg-5">
-            <div class="bg-black text-white p-4 rounded shadow-lg mb-4" style="min-height: 480px; border-left: 5px solid #0d6efd; display: flex; flex-direction: column;">
+            <div class="bg-black text-white p-4 rounded shadow-lg mb-4" style="min-height: 480px; display: flex; flex-direction: column; border-left: 4px solid #0d6efd;">
                 <div class="text-info border-bottom border-secondary pb-2 mb-3 small d-flex justify-content-between font-monospace">
-                    <span class="fw-bold"><i class="bi bi-terminal me-2"></i>TERMINAL DE SALIDA</span>
-                    <button class="btn btn-sm btn-outline-secondary py-0" style="font-size: 0.7rem;" @onclick='() => SalidaTerminal = ""'>LIMPIAR</button>
+                    <span>TERMINAL DE SALIDA</span>
+                    <button class="btn btn-sm btn-outline-secondary py-0" @onclick='() => SalidaTerminal = ""'>LIMPIAR</button>
                 </div>
-                <div class="font-monospace flex-grow-1" style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.5;">
+                <div class="font-monospace flex-grow-1" style="white-space: pre-wrap; font-size: 0.9rem;">
                     @if (!string.IsNullOrEmpty(SalidaTerminal))
                     {
                         <span>@SalidaTerminal</span>
                     }
                     else
                     {
-                        <span class="text-muted small">> Esperando ejecución...</span>
+                        <span class="text-muted small">> Sistema listo para ejecución...</span>
                     }
                 </div>
             </div>
 
             @if (errores.Any())
             {
-                <div class="alert alert-danger bg-dark text-danger border-danger shadow-sm font-monospace">
-                    <div class="fw-bold mb-2 border-bottom border-danger pb-1">ERRORES ENCONTRADOS:</div>
+                <div class="alert alert-danger bg-dark text-danger border-danger font-monospace shadow-sm">
+                    <div class="fw-bold mb-2 border-bottom border-danger">DEBUGGER:</div>
                     @foreach (var error in errores)
                     {
-                        <div class="mb-1 small"><i class="bi bi-exclamation-octagon-fill me-2"></i>@error</div>
+                        <div class="small mb-1">@error</div>
                     }
                 </div>
             }
@@ -68,28 +61,8 @@
     </div>
 </div>
 
-<style>
-    .authors-badge .badge {
-        transition: all 0.3s ease;
-        cursor: default;
-    }
-    .authors-badge .badge:hover {
-        background-color: #0b5ed7 !important;
-        transform: scale(1.05);
-        box-shadow: 0 0 15px rgba(13, 110, 253, 0.4);
-    }
-    .bg-black { background-color: #000 !important; }
-    textarea::placeholder { color: #2d5a2d; }
-    .card-footer .btn {
-        padding-top: 0.4rem;
-        padding-bottom: 0.4rem;
-    }
-</style>
-
 <script>
-    window.pedirDato = (mensaje) => {
-        return prompt(mensaje) || "";
-    };
+    window.pedirDato = (msg) => prompt(msg) || "";
 </script>
 
 @code {
@@ -100,109 +73,232 @@
 
     private async Task Compilar()
     {
-        SalidaTerminal = "> Compilando código...\n";
-        
-        var errLex = lexerService.ValidarCodigo(compilacion.Codigo);
-        var errSin = parserService.AnalizarSintaxis(compilacion.Codigo);
-        var errSem = semanticService.AnalizarSemantica(compilacion.Codigo);
+        SalidaTerminal = "";
+        errores = lexerService.ValidarCodigo(compilacion.Codigo)
+            .Concat(parserService.AnalizarSintaxis(compilacion.Codigo))
+            .Concat(semanticService.AnalizarSemantica(compilacion.Codigo)).ToList();
 
-        errores = errLex.Concat(errSin).Concat(errSem).ToList();
-        ValoresActuales = semanticService.ObtenerValores();
+        ValoresActuales.Clear();
 
         if (!errores.Any())
         {
-            SalidaTerminal += "> Análisis exitoso. Ejecutando binario...\n------------------------\n";
             await EjecutarInterpretacion();
         }
-        else
-        {
-            SalidaTerminal += "!! Errores detectados en la compilación.\n";
-        }
 
-        compilacion.TieneErrores = errores.Any();
-        compilacion.Fecha = DateTime.Now;
-        compilacion.ResultadoAnalisis = errores.Any() ? "Errores" : "Exito";
         await compiladorService.Guardar(compilacion);
     }
 
-  private async Task EjecutarInterpretacion()
-{
-    var lineas = compilacion.Codigo.Split('\n');
-    bool saltarBloqueElse = false;
-    bool ejecutandoBloqueValido = true;
-
-    foreach (var lineaRaw in lineas)
+    private async Task EjecutarInterpretacion()
     {
-        var l = lineaRaw.Trim();
-        if (string.IsNullOrEmpty(l) || l.StartsWith("#") || l.StartsWith("using") || l.Contains("main") || l == "}") 
-        {
-            if(l == "}") ejecutandoBloqueValido = true; 
-            continue;
-        }
-        if (l.Contains("if ("))
-        {
-            var condicion = l.Split('(', ')')[1]; 
-            var partes = condicion.Split(new[] { '>', '<', '=' }, StringSplitOptions.RemoveEmptyEntries);
-            var varNombre = partes[0].Trim();
-            int valorComparar = int.Parse(partes[1].Trim());
-            int valorActual = int.Parse(ValoresActuales.ContainsKey(varNombre) ? ValoresActuales[varNombre] : "0");
+        var lineas = compilacion.Codigo.Split('\n');
+        int i = 0;
+        bool enMain = false;
+        int safety = 0;
 
-            if (l.Contains(">") && valorActual > valorComparar) {
-                ejecutandoBloqueValido = true;
-                saltarBloqueElse = true;
-            }
-            else if (l.Contains("<") && valorActual < valorComparar) {
-                ejecutandoBloqueValido = true;
-                saltarBloqueElse = true;
-            }
-            else {
-                ejecutandoBloqueValido = false;
-                saltarBloqueElse = false;
-            }
-            continue;
-        }
-        if (l.Contains("else"))
+        while (i < lineas.Length && safety < 5000)
         {
-            ejecutandoBloqueValido = !saltarBloqueElse;
-            continue;
-        }
+            var l = lineas[i].Trim();
+            safety++;
 
-        if (!ejecutandoBloqueValido) continue;
-
-        if (l.Contains("cout <<"))
-        {
-            var partes = l.Split("<<");
-            foreach (var parte in partes.Skip(1))
+            if (!enMain)
             {
-                var item = parte.Replace(";", "").Replace("endl", "").Replace("\"", "").Trim();
-                if (ValoresActuales.ContainsKey(item)) SalidaTerminal += ValoresActuales[item] + " ";
-                else SalidaTerminal += item + " ";
+                if (l.Contains("main()")) enMain = true;
+                i++; continue;
             }
-            SalidaTerminal += "\n";
+
+            if (string.IsNullOrEmpty(l) || l.StartsWith("#") || l.Contains("using") || l == "{")
+            {
+                i++; continue;
+            }
+
+            if (l.StartsWith("for"))
+            {
+                var partes = l.Split('(', ')')[1].Split(';');
+
+                string init = partes[0];
+                string cond = partes[1];
+                string step = partes[2];
+
+                ProcesarAsignacionSilenciosa(init);
+
+                int inicioBloque = i + 1;
+                int finBloque = SaltarBloque(lineas, i) - 1;
+
+                while (EvaluarCondicion(cond))
+                {
+                    for (int j = inicioBloque; j < finBloque; j++)
+                    {
+                        var lineaInterna = lineas[j].Trim();
+
+                        if (lineaInterna.Contains("cout <<")) await ProcesarCout(lineaInterna);
+                        else if (lineaInterna.Contains("cin >>")) await ProcesarCin(lineaInterna);
+                        else if (lineaInterna.Contains("=") || lineaInterna.Contains("++"))
+                            ProcesarAsignacionSilenciosa(lineaInterna);
+                    }
+
+                    ProcesarAsignacionSilenciosa(step);
+                }
+
+                i = finBloque + 1;
+                continue;
+            }
+
+            if (l.StartsWith("if") || l.StartsWith("while"))
+            {
+                if (EvaluarCondicion(l.Split('(', ')')[1])) i++;
+                else i = SaltarBloque(lineas, i);
+                continue;
+            }
+
+            if (l == "}") break;
+
+            if (l.Contains("cout <<")) await ProcesarCout(l);
+            else if (l.Contains("cin >>")) await ProcesarCin(l);
+            else if (l.Contains("=") || l.Contains("++")) ProcesarAsignacionSilenciosa(l);
+
+            i++;
+            StateHasChanged();
         }
-        else if (l.Contains("cin >>"))
+    }
+
+    private void ProcesarAsignacionSilenciosa(string l)
+    {
+        l = l.Replace(";", "").Trim();
+        if (string.IsNullOrEmpty(l)) return;
+
+        if (l.Contains("++"))
         {
-            var varNombre = l.Split(">>")[1].Replace(";", "").Trim();
-            var resUser = await JSRuntime.InvokeAsync<string>("pedirDato", $"Ingrese {varNombre}:");
-            semanticService.ActualizarValorDesdeInput(varNombre, resUser);
-            ValoresActuales[varNombre] = resUser;
-            SalidaTerminal += "> " + varNombre + ": " + resUser + "\n";
+            string v = l.Replace("++", "").Trim();
+            ValoresActuales[v] = (GetVal(v) + 1).ToString();
         }
         else if (l.Contains("="))
         {
-            var partes = l.Split('=');
-            var varDestino = partes[0].Replace("string", "").Replace("int", "").Replace("float", "").Trim();
-            var valorNuevo = partes[1].Replace(";", "").Replace("\"", "").Trim();
-            ValoresActuales[varDestino] = valorNuevo;
+            var p = l.Split('=');
+            string d = p[0].Trim();
+
+            if (d.Contains("int ")) d = d.Replace("int ", "");
+            if (d.Contains("float ")) d = d.Replace("float ", "");
+            if (d.Contains("long ")) d = d.Replace("long ", "");
+            if (d.Contains("double ")) d = d.Replace("double ", "");
+
+            if (d.Contains(" ")) d = d.Split(' ').Last();
+
+            ValoresActuales[d.Trim()] = EvaluarMath(p[1]).ToString();
         }
-        else if (l.StartsWith("return "))
+    }
+
+    private double EvaluarMath(string e)
+    {
+        e = e.Trim().Replace(";", "");
+
+        while (e.Contains("(") && e.Contains(")"))
         {
-            var v = l.Replace("return", "").Replace(";", "").Trim();
-            SalidaTerminal += "------------------------\nEXIT CODE: " + (ValoresActuales.ContainsKey(v) ? ValoresActuales[v] : v);
+            int inicio = e.LastIndexOf("(");
+            int fin = e.IndexOf(")", inicio);
+            string subExpr = e.Substring(inicio + 1, fin - inicio - 1);
+            double resultadoSub = EvaluarMath(subExpr);
+            e = e.Remove(inicio, fin - inicio + 1).Insert(inicio, resultadoSub.ToString());
         }
 
-        StateHasChanged();
-        await Task.Delay(50);
+        if (e.Contains("+"))
+        {
+            var p = e.Split('+', 2);
+            return EvaluarMath(p[0]) + EvaluarMath(p[1]);
+        }
+
+        if (e.Contains("-") && !e.StartsWith("-"))
+        {
+            var p = e.Split('-', 2);
+            return EvaluarMath(p[0]) - EvaluarMath(p[1]);
+        }
+
+        if (e.Contains("*"))
+        {
+            var p = e.Split('*', 2);
+            return EvaluarMath(p[0]) * EvaluarMath(p[1]);
+        }
+
+        if (e.Contains("/"))
+        {
+            var p = e.Split('/', 2);
+            return EvaluarMath(p[0]) / EvaluarMath(p[1]);
+        }
+
+        return GetVal(e);
     }
-}
+
+    private bool EvaluarCondicion(string c)
+    {
+        string[] ops = { "<=", ">=", "==", "!=", "<", ">" };
+
+        foreach (var op in ops)
+        {
+            if (c.Contains(op))
+            {
+                var p = c.Split(new[] { op }, StringSplitOptions.None);
+                double v1 = GetVal(p[0]);
+                double v2 = GetVal(p[1]);
+
+                return op switch
+                {
+                    "<=" => v1 <= v2,
+                    ">=" => v1 >= v2,
+                    "==" => v1 == v2,
+                    "!=" => v1 != v2,
+                    "<" => v1 < v2,
+                    ">" => v1 > v2,
+                    _ => false
+                };
+            }
+        }
+
+        return false;
+    }
+
+    private double GetVal(string s)
+    {
+        s = s.Trim();
+        if (string.IsNullOrEmpty(s)) return 0;
+        if (double.TryParse(s, out double n)) return n;
+        return double.Parse(ValoresActuales.GetValueOrDefault(s, "0"));
+    }
+
+    private int SaltarBloque(string[] ls, int idx)
+    {
+        int b = 1;
+        while (b > 0 && idx < ls.Length - 1)
+        {
+            idx++;
+            if (ls[idx].Contains("{")) b++;
+            if (ls[idx].Contains("}")) b--;
+        }
+        return idx + 1;
+    }
+
+    private async Task ProcesarCout(string l)
+    {
+        var ps = l.Split("<<");
+        foreach (var p in ps.Skip(1))
+        {
+            var s = p.Replace(";", "").Replace("endl", "").Replace("\"", "").Trim();
+            if (p.Contains("\"")) SalidaTerminal += s;
+            else SalidaTerminal += EvaluarMath(s).ToString() + " ";
+        }
+        SalidaTerminal += "\n";
+    }
+
+    private async Task ProcesarCin(string l)
+    {
+        var vs = l.Replace("cin", "").Replace(";", "").Split(new[] { ">>" }, StringSplitOptions.RemoveEmptyEntries);
+
+        foreach (var vRaw in vs)
+        {
+            var v = vRaw.Trim();
+            if (string.IsNullOrEmpty(v)) continue;
+
+            string res = await JSRuntime.InvokeAsync<string>("pedirDato", $"Ingrese {v}:");
+            ValoresActuales[v] = string.IsNullOrEmpty(res) ? "0" : res;
+            SalidaTerminal += ValoresActuales[v] + "\n";
+        }
+    }
 }

@@ -13,41 +13,39 @@ public class ParserService
 
         string[] lineas = codigo.Split('\n');
         int balanceLlaves = 0;
+        int balanceParentesis = 0;
 
         for (int i = 0; i < lineas.Length; i++)
         {
-            string linea = lineas[i].Trim();
-            if (string.IsNullOrEmpty(linea) || linea.StartsWith("//") || linea.StartsWith("#") || linea.StartsWith("using")) continue;
+            string lineaOriginal = lineas[i].Trim();
+            string linea = lineaOriginal.Split("//")[0].Trim();
+
+            if (string.IsNullOrEmpty(linea) || linea.StartsWith("#") || linea.StartsWith("using")) continue;
             int numLinea = i + 1;
 
             balanceLlaves += linea.Count(f => f == '{');
             balanceLlaves -= linea.Count(f => f == '}');
+            balanceParentesis += linea.Count(f => f == '(');
+            balanceParentesis -= linea.Count(f => f == ')');
 
             bool esEstructuraOmitida = linea.EndsWith("{") || linea.EndsWith("}") || linea.EndsWith(":") ||
                                      linea.Contains("if") || linea.Contains("else") ||
                                      linea.Contains("main()") || linea.Contains("for") ||
                                      linea.Contains("while") || linea.Contains("switch");
 
-            if (!linea.EndsWith(";") && !esEstructuraOmitida)
+            if (!linea.EndsWith(";") && !esEstructuraOmitida && !string.IsNullOrEmpty(linea))
             {
-                erroresSintacticos.Add($"Error Sintáctico (Línea {numLinea}): Falta ';' al final de la instrucción.");
+                erroresSintacticos.Add($"[SINTÁCTICO] (Línea {numLinea}): Falta ';' al final de la instrucción.");
             }
 
-            if (linea.Contains("cout") || linea.Contains("cin") || linea.Contains("print") || linea.Contains("input"))
+            if ((linea.Contains("if") || linea.Contains("while") || linea.Contains("for")) && (!linea.Contains("(") || !linea.Contains(")")))
             {
-                if ((linea.Contains("print") || linea.Contains("input")) && (!linea.Contains("(") || !linea.Contains(")")))
-                    erroresSintacticos.Add($"Error Sintáctico (Línea {numLinea}): La función requiere '( )'.");
-
-                if (linea.Contains("cout") && !linea.Contains("<<"))
-                    erroresSintacticos.Add($"Error Sintáctico (Línea {numLinea}): 'cout' requiere el operador '<<'.");
-
-                if (linea.Contains("cin") && !linea.Contains(">>"))
-                    erroresSintacticos.Add($"Error Sintáctico (Línea {numLinea}): 'cin' requiere el operador '>>'.");
+                erroresSintacticos.Add($"[SINTÁCTICO] (Línea {numLinea}): Estructura de control requiere '(' y ')'.");
             }
         }
 
-        if (balanceLlaves != 0)
-            erroresSintacticos.Add("Error Sintáctico: El número de llaves '{' y '}' no coincide.");
+        if (balanceLlaves != 0) erroresSintacticos.Add("[SINTÁCTICO] El número de llaves '{' y '}' no coincide.");
+        if (balanceParentesis != 0) erroresSintacticos.Add("[SINTÁCTICO] El número de paréntesis '(' y ')' no coincide.");
 
         return erroresSintacticos;
     }
